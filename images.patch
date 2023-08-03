@@ -1,0 +1,69 @@
+diff --git a/backend/cats/serializers.py b/backend/cats/serializers.py
+index 986e9ae..ed3f6fc 100644
+--- a/backend/cats/serializers.py
++++ b/backend/cats/serializers.py
+@@ -44,15 +44,24 @@ class CatSerializer(serializers.ModelSerializer):
+     color = Hex2NameColor()
+     age = serializers.SerializerMethodField()
+     image = Base64ImageField(required=False, allow_null=True)
++    image_url = serializers.SerializerMethodField(
++        'get_image_url',
++        read_only=True,
++    )
+ 
+     class Meta:
+         model = Cat
+         fields = (
+             'id', 'name', 'color', 'birth_year', 'achievements',
+-            'owner', 'age', 'image'
++            'owner', 'age', 'image', 'image_url'
+         )
+         read_only_fields = ('owner',)
+ 
++    def get_image_url(self, obj):
++        if obj.image:
++            return obj.image.url
++        return None
++
+     def get_age(self, obj):
+         return dt.datetime.now().year - obj.birth_year
+ 
+diff --git a/frontend/src/components/card-page/card-page.jsx b/frontend/src/components/card-page/card-page.jsx
+index e1872eb..40fc564 100644
+--- a/frontend/src/components/card-page/card-page.jsx
++++ b/frontend/src/components/card-page/card-page.jsx
+@@ -89,7 +89,7 @@ export const CardPage = ({ data, setData, extraClass = "" }) => {
+         <div className={styles.img_box}>
+           <img
+             className={styles.img}
+-            src={data.image ?? defaultImg}
++            src={data.image_url ?? defaultImg}
+             alt="Фото котика."
+           />
+         </div>
+diff --git a/frontend/src/components/edit-card-page/edit-card-page.jsx b/frontend/src/components/edit-card-page/edit-card-page.jsx
+index 2fbb051..e44b259 100644
+--- a/frontend/src/components/edit-card-page/edit-card-page.jsx
++++ b/frontend/src/components/edit-card-page/edit-card-page.jsx
+@@ -125,7 +125,7 @@ export const EditCardPage = ({ data, setData, extraClass = "" }) => {
+           <div className={styles.img_box}>
+             <img
+               className={styles.current_img}
+-              src={card.image}
++              src={card.image_url}
+               alt="Фото котика."
+             />
+             <ButtonSecondary
+diff --git a/frontend/src/components/main-page/main-page.jsx b/frontend/src/components/main-page/main-page.jsx
+index c33cdb4..d49260b 100644
+--- a/frontend/src/components/main-page/main-page.jsx
++++ b/frontend/src/components/main-page/main-page.jsx
+@@ -53,7 +53,7 @@ export const MainPage = ({ queryPage, setQueryPage, extraClass = "" }) => {
+             <MainCard
+               cardId={item.id}
+               key={index}
+-              img={item.image}
++              img={item.image_url}
+               name={item.name}
+               date={item.birth_year}
+               color={item.color}
